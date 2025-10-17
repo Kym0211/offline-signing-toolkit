@@ -1,0 +1,17 @@
+{
+  "name": "offline-signer-cli",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.14.0",
+  "dependencies": {
+    "gill": "^0.12.0",
+    "tweetnacl": "^1.0.3"
+  }
+}
