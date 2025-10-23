@@ -43,7 +43,7 @@ The core problem being addressed are -
 
 *Purpose:* To prepare the vote transaction message without signing it.
 
-*Inputs:* Requires the sender pubkey, the Nonce Account Pubkey (from create-nonce.ts), Vote Token Mint Pubkey, Destination Pubkey (e.g., the 'YES' vote address), and the Amount of tokens to transfer.
+*Inputs:* Requires the sender pubkey, the Nonce Account Pubkey (from create-nonce.ts), Vote Token Mint Pubkey, Destination Pubkey, and the Amount of tokens to transfer.
 
 *How it Works:*
 
