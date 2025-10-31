@@ -54,13 +54,11 @@ async function main() {
         connection,
         tx.serialize({ requireAllSignatures: false }) 
     );
-    console.log("Nonce initiated: ", sig);
 
     // const rentLamports = await connection.getMinimumBalanceForRentExemption(
     //     NONCE_ACCOUNT_LENGTH
     // );
     // console.log(`Rent-exempt lamports needed: ${rentLamports / LAMPORTS_PER_SOL} SOL`);
-
 }
 
 main().catch(err => {

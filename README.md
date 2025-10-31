@@ -28,7 +28,11 @@ The core problem being addressed are -
 
 1. **One-Time Setup (Online)**
 
+<<<<<<< HEAD
 - ***create-nonce.ts:***
+=======
+***create-nonce.ts:***
+>>>>>>> fe65961 (added token_transfer transaction)
 
 *Purpose:* To create the Durable Nonce account required for non-expiring offline transactions.
 
@@ -38,12 +42,20 @@ The core problem being addressed are -
 
 2. **Voting Workflow (Online -> Offline -> Online)**
 
+<<<<<<< HEAD
    
 - ***construct.ts (Online Machine):***
 
 *Purpose:* To prepare the vote transaction message without signing it.
 
 *Inputs:* Requires the sender pubkey, the Nonce Account Pubkey (from create-nonce.ts), Vote Token Mint Pubkey, Destination Pubkey, and the Amount of tokens to transfer.
+=======
+***construct.ts (Online Machine):***
+
+*Purpose:* To prepare the vote transaction message without signing it.
+
+*Inputs:* Requires the sender pubkey, the Nonce Account Pubkey (from create-nonce.ts), Vote Token Mint Pubkey, Destination Pubkey (e.g., the 'YES' vote address), and the Amount of tokens to transfer.
+>>>>>>> fe65961 (added token_transfer transaction)
 
 *How it Works:*
 
@@ -61,7 +73,11 @@ The core problem being addressed are -
 
 The unsigned-tx.json file is securely transferred (e.g., via USB drive) to the air-gapped machine where the Governance Key's secret is stored.
 
+<<<<<<< HEAD
 - ***sign.ts (Air-Gapped Machine):***
+=======
+***sign.ts (Air-Gapped Machine):***
+>>>>>>> fe65961 (added token_transfer transaction)
 
 *Purpose:* To sign the transaction message securely offline.
 
@@ -85,7 +101,11 @@ Inputs: Requires the unsigned-tx.json file and payer's keypair file (e.g., cold-
 
 The signature.json file is securely transferred back to the online machine.
 
+<<<<<<< HEAD
 - ***broadcast.ts (Online Machine):***
+=======
+***broadcast.ts (Online Machine):***
+>>>>>>> fe65961 (added token_transfer transaction)
 
 *Purpose:* To combine the message and signature and send the transaction to the network.
 

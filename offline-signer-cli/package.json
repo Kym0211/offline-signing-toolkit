@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "construct": "ts-node construct.ts",
+    "token_transfer": "ts-node token_transfer.ts",
+    "sol_transfer": "ts-node sol_transfer.ts",
     "sign": "ts-node sign.ts",
     "broadcast": "ts-node broadcast.ts",
     "create_nonce": "ts-node create_nonce.ts"

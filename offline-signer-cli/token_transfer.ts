@@ -6,12 +6,12 @@ const USE_DURABLE_NONCE = true;
 
 const RPC_ENDPOINT = "https://api.devnet.solana.com";
 const SENDER_PUBKEY = new PublicKey("12uBq3Qhvd1fJ8JsXoUosmzhnrM59TTGUgtdLru5wBUM");
-const NONCE_PUBKEY = new PublicKey("2zU8pnY5yKu4Unk2aXZViWB5CxGdzi7MuPTm55y4erZW");
+const NONCE_PUBKEY = new PublicKey("CuGTAtCreyUAMrwWRk8wu2DXWNB2LWC6HWjaaWoh5y4j");
 const FEE_PAYER_PUBKEY = new PublicKey("12uBq3Qhvd1fJ8JsXoUosmzhnrM59TTGUgtdLru5wBUM");
 
-const VOTE_TOKEN_MINT_PUBKEY = new PublicKey("4xTW11K4BNqy6MoRV9DFM6MNvS9B7gWRLNcUbzgWWWf3");
+const VOTE_TOKEN_MINT_PUBKEY = new PublicKey("7u96GpRmguMVh5dGtZfQsi2HwP4Mn3625g7avtFmKnec");
 const VOTE_DESTINATION_PUBKEY = new PublicKey("Dv8EZLYymKDdXnnTuw2M1MD31TjVru5kpnhrk8Ki6wth");
-const VOTE_AMOUNT = 1000000; 
+const VOTE_AMOUNT = 100_000_000; 
 
 async function main() {
     // const args = process.argv.slice(2);
@@ -46,8 +46,9 @@ async function main() {
             SystemProgram.nonceAdvance({
                 noncePubkey: NONCE_PUBKEY,
                 authorizedPubkey: SENDER_PUBKEY 
-            }) 
+            })
         );
+        
         recentBlockhash = nonceAccount.nonce;
 
         console.log(`nonce : ${recentBlockhash}`);
