@@ -1,6 +1,6 @@
 import { createAssociatedTokenAccountInstruction, createTransferInstruction, getAssociatedTokenAddressSync } from '@solana/spl-token';
 import { Connection, PublicKey, SystemProgram, Transaction, NonceAccount, TransactionMessage } from '@solana/web3.js';
-import * as fs from "fs";
+// import * as fs from "fs";
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 
 const USE_DURABLE_NONCE = true;
@@ -14,7 +14,7 @@ const NONCE_PUBKEY = new PublicKey("CuGTAtCreyUAMrwWRk8wu2DXWNB2LWC6HWjaaWoh5y4j
 // const VOTE_DESTINATION_PUBKEY = new PublicKey("Dv8EZLYymKDdXnnTuw2M1MD31TjVru5kpnhrk8Ki6wth");
 const SOL_AMOUNT = 0.5;
 
-async function main() {
+export async function main() {
     // const args = process.argv.slice(2);
     // if (args.length !== 2 ){
     //     console.log("Usage: pnpm construct");
@@ -75,13 +75,19 @@ async function main() {
 
     // const messageBuffer = messageV0.serialize();
     const fileName = 'unsigned-tx.json';
-    fs.writeFileSync(fileName, JSON.stringify({
-        message: Buffer.from(messageV0).toString('base64') 
-    }));
+    // fs.writeFileSync(fileName, JSON.stringify({
+    //     message: Buffer.from(messageV0).toString('base64') 
+    // }));
 
+    const message = Buffer.from(messageV0).toString('base64')
     console.log(`\n✅ VOTE transaction message successfully created!`);
     console.log(`📄 Saved to: ${fileName}`);
 
-    return messageV0;
+    return message;
 
 }
+
+main().catch(err => {
+    console.error(err);
+    process.exit(1);
+})
