@@ -4,7 +4,7 @@ import { Instructions } from "@/components/Instructions";
 export default function Home() {
   // No flex classes here! Just a simple div.
   return (
-    <div className="min-h-screen">
+    <div>
       <Hero />
       {/* <Instructions /> */}
     </div>
