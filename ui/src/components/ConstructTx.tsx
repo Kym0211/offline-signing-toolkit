@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { main } from "@/lib/sol_transfer"; // Import our logic
+import { solTransfer } from "@/lib/sol_transfer"; // Import our logic
 
 // This component tells the parent when a message is created
 interface ConstructTxProps {
@@ -11,23 +11,19 @@ interface ConstructTxProps {
 export function ConstructTx({ onMessageCreated }: ConstructTxProps) {
     const [recipient, setRecipient] = useState("");
     const [amount, setAmount] = useState("");
+    const [nonce, setNonce] = useState("");
+    const [sender, setSender] = useState("");
     const [error, setError] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    // Hard-coding these for simplicity. In a real app, these would
-    // be part of a user's saved wallet/profile.
-    const COLD_WALLET = "YourColdWalletPublicKeyHere";
-    const HOT_WALLET = "YourHotWalletPublicKeyHere";
-    const NONCE_ACCOUNT = "YourNonceAccountPublicKeyHere";
-
     const handleSubmit = async (e: React.FormEvent) => {
-        console.log("setting transaction");
+        // console.log("setting transaction");
         e.preventDefault();
         setError("");
         setIsLoading(true);
 
         try {
-            const message = await main();
+            const message = await solTransfer(sender, +amount, nonce, recipient);
             console.log(message);
             
             // Pass the signed message up to the parent component

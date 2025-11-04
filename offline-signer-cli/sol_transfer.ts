@@ -12,7 +12,7 @@ const NONCE_PUBKEY = new PublicKey("CuGTAtCreyUAMrwWRk8wu2DXWNB2LWC6HWjaaWoh5y4j
 
 // const VOTE_TOKEN_MINT_PUBKEY = new PublicKey("7u96GpRmguMVh5dGtZfQsi2HwP4Mn3625g7avtFmKnec");
 // const VOTE_DESTINATION_PUBKEY = new PublicKey("Dv8EZLYymKDdXnnTuw2M1MD31TjVru5kpnhrk8Ki6wth");
-const SOL_AMOUNT = 0.5;
+const SOL_AMOUNT = 0.1;
 
 async function main() {
     // const args = process.argv.slice(2);
@@ -85,3 +85,5 @@ async function main() {
     return messageV0;
 
 }
+
+main();
