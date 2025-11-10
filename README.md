@@ -1,142 +1,128 @@
-# ⚠️ WARNING: This project is currently under development
-This toolkit aims to provide Solana validators with a secure method for participating in SIMD (Solana Improvement Document) governance voting without exposing their main validator identity key ("hot key") during the voting process.
+# Offline Signer CLI
 
-The core problem being addressed are - 
+This toolkit provides a secure, standalone command-line executable for executing sensitive Solana transactions without exposing your private key to the internet.
 
-1. Hot Key Exposure: The current SIMD voting process requires validators to sign vote transactions using their main identity key, which must remain online for consensus operations, increasing security risks.
+It is designed to be run in a secure, air-gapped workflow.
 
-2. Transaction Expiration: Standard offline signing workflows are difficult on Solana due to the short lifespan (~1-2 minutes) of the recentBlockhash used in transactions, making the manual offline signing process prone to failure.
+## The Problem
+1.  **Private Key Exposure:** Standard wallet workflows require your private key to be on an internet-connected device, increasing security risks for high-value operations.
+2.  **Transaction Expiration:** Standard offline signing workflows are difficult on Solana due to the short lifespan (~1-2 minutes) of the `recentBlockhash`, making a manual air-gapped process unreliable.
 
-## Core Components
+## The Solution
+1.  **Durable Nonces:** We eliminate the `recentBlockhash` problem by using a **Durable Nonce** account. This allows a transaction to be constructed online, signed securely offline, and broadcast hours or days later without expiring.
+2.  **Air-Gapped Workflow:** The CLI is a single, standalone executable that can be run on any machine (online or offline) without an internet connection or any dependencies. Your private key *never* touches the internet.
+3.  **Standalone Executable:** This tool is packaged as a single binary. There is no need to install Node.js, npm, or any other libraries.
 
-1. `offline-signer-cli` (Typescript CLI) -
+---
 
-- `construct.ts`: Builds the token transfer transaction using a Durable Nonce and saves the unsigned message.
+## Installation
 
-- `sign.ts`: Runs on an air-gapped machine, loads the Governance Key, signs the message from `construct.ts`, and saves the signature.
+1.  Go to the [**Releases Page**](https://github.com/Kym0211/offline-signing-toolkit/releases) on this GitHub repository.
+2.  Download the executable for your operating system (e.g., `offline-signer-cli-win.exe`, `offline-signer-cli-macos`).
+3.  Copy this single executable file to both your online and offline machines (e.g., via a trusted USB drive).
 
-- `broadcast.ts`: Runs online, combines the unsigned message and the signature, and broadcasts the transaction.
+---
 
-2. `validator-governance` (Anchor Program):
-- Provides instructions for validators to manage their vote delegation.
+## The Workflow
 
-- Creates an on-chain Program Derived Address (PDA) for each validator, acting as a public registry mapping their Validator ID to their chosen offline Governance Key.
+This tool is designed to be run in a 3-step process that moves between your internet-connected (online) and air-gapped (offline) machines.
 
-- This registry is intended to be read by vote organizers during the vote token airdrop process.
 
-## CLI Progress (offline-signer-cli)
 
-1. **One-Time Setup (Online)**
+### Step 1: One-Time Setup (Online)
 
-<<<<<<< HEAD
-- ***create-nonce.ts:***
-=======
-***create-nonce.ts:***
->>>>>>> fe65961 (added token_transfer transaction)
+Before you can use the tool, you need a Durable Nonce account.
 
-*Purpose:* To create the Durable Nonce account required for non-expiring offline transactions.
+1.  **Prepare Your Cold Key:** Use an existing, funded cold key or create a new one (e.g., as a `.json` file) and fund it with a small amount of SOL. This key will be the *authority* for the nonce.
+2.  **Create Nonce Account:** On your **online** machine, run the `create-nonce` command. This will create the new nonce account on-chain and save its keypair to a new file.
 
-*How it Works:* Takes the validator's Governance Key (the offline key, which needs temporary online access just for this setup and must be funded with SOL) as input. It generates a new keypair for the nonce account itself. It then constructs and sends a transaction containing two instructions: SystemProgram.createAccount (to allocate space and assign ownership to the System Program) and SystemProgram.initializeNonceAccount (to set the nonce authority to the Governance Key).
+    ```bash
+    ./offline-signer-cli create-nonce --authority <path/to/your-cold-key.json>
+    ```
+    *This is the only time your cold key needs to be used online to send a transaction.*
 
-*Output:* Creates the nonce account on-chain and prints its public key. This public key is needed for the construct.ts script.
+### Step 2: Per-Transaction Workflow
 
-2. **Voting Workflow (Online -> Offline -> Online)**
+This is the process you will repeat for every transaction.
 
-<<<<<<< HEAD
-   
-- ***construct.ts (Online Machine):***
+#### A. Construct (Online)
+On your **online** machine, run the `sol-transfer` or `token-transfer` command to build your transaction. This creates the `unsigned-tx.json` file.
 
-*Purpose:* To prepare the vote transaction message without signing it.
+*Example (SOL Transfer):*
+```bash
+./offline-signer-cli sol-transfer \
+  --sender <SENDER_PUBKEY> \
+  --recipient <RECIPIENT_PUBKEY> \
+  --amount 0.5 \
+  --nonce <YOUR_NONCE_ACCOUNT_PUBKEY>
+```
+*Output: `unsigned-tx.json` is created.*
 
-*Inputs:* Requires the sender pubkey, the Nonce Account Pubkey (from create-nonce.ts), Vote Token Mint Pubkey, Destination Pubkey, and the Amount of tokens to transfer.
-=======
-***construct.ts (Online Machine):***
+#### B. Transfer (Manual)
+Copy the following files to your air-gapped machine via USB:
+1.  `unsigned-tx.json`
+2.  Your `cold-wallet.json` (the key you used as the nonce authority)
 
-*Purpose:* To prepare the vote transaction message without signing it.
+#### C. Sign (Offline)
+On your **air-gapped** machine, run the `sign` command. It will read your keypair and the unsigned transaction, and create a new file with the signature.
 
-*Inputs:* Requires the sender pubkey, the Nonce Account Pubkey (from create-nonce.ts), Vote Token Mint Pubkey, Destination Pubkey (e.g., the 'YES' vote address), and the Amount of tokens to transfer.
->>>>>>> fe65961 (added token_transfer transaction)
+```bash
+./offline-signer-cli sign \
+  --keypair <path/to/cold-wallet.json> \
+  --unsigned <path/to/unsigned-tx.json>
+```
+*Output: `signature.json` is created.*
 
-*How it Works:*
+#### D. Transfer (Manual)
+Copy the `signature.json` file back to your **online** machine via USB.
 
-- Fetches the current nonce value from the specified Nonce Account.
+#### E. Broadcast (Online)
+On your **online** machine, run the `broadcast` command. It will read the original message and the new signature, combine them, and send the transaction.
 
-- Determines the source (Governance Key's ATA) and destination (Vote Address's ATA) token accounts.
+```bash
+./offline-signer-cli broadcast \
+  --unsigned <path/to/unsigned-tx.json> \
+  --signature <path/to/signature.json>
+```
+*Output: Prints the final Transaction Signature and Explorer link.*
 
-- Builds the list of instructions: SystemProgram.nonceAdvance (using the Governance Key as authority) followed by createTransferInstruction (for the SPL Token vote).
+---
 
-- Compiles these into a TransactionMessage using the fetched nonce as the recentBlockhash and the Governance Key as the payerKey.
+## Command Reference
 
-*Output:* Saves the serialized message (as a base64 string) into an unsigned-tx.json file.
+### `create-nonce`
+Creates a new Durable Nonce account.
+* `--authority <path>`: (Alias: `-a`) Path to the keypair file that will own the nonce. (Default: `cold-wallet.json`)
 
-*File Transfer (Manual):*
+### `sol-transfer`
+Constructs an unsigned SOL transfer.
+* `--sender <pubkey>`: (Alias: `-s`) Sender public key (your cold wallet).
+* `--recipient <pubkey>`: (Alias: `-r`) Recipient public key.
+* `--amount <number>`: (Alias: `-a`) Amount of SOL to send.
+* `--nonce <pubkey>`: (Alias: `-n`) Your nonce account public key.
 
-The unsigned-tx.json file is securely transferred (e.g., via USB drive) to the air-gapped machine where the Governance Key's secret is stored.
+### `token-transfer`
+Constructs an unsigned SPL Token transfer.
+* `--sender <pubkey>`: (Alias: `-s`) Sender public key (your cold wallet).
+* `--recipient <pubkey>`: (Alias: `-r`) Recipient's main public key.
+* `--mint <pubkey>`: (Alias: `-m`) The mint address of the token.
+* `--amount <number>`: (Alias: `-a`) Amount of tokens (raw units).
+* `--nonce <pubkey>`: (Alias: `-n`) Your nonce account public key.
+* `--fee-payer <pubkey>`: (Alias: `-f`) Optional. The key to pay fees. (Default: *sender*)
 
-<<<<<<< HEAD
-- ***sign.ts (Air-Gapped Machine):***
-=======
-***sign.ts (Air-Gapped Machine):***
->>>>>>> fe65961 (added token_transfer transaction)
+### `sign`
+Signs an unsigned transaction message on an offline machine.
+* `--unsigned <path>`: (Alias: `-u`) Path to the `unsigned-tx.json` file. (Default: `unsigned-tx.json`)
+* `--keypair <path>`: (Alias: `-k`) Path to your cold wallet keypair. (Default: `cold-wallet.json`)
 
-*Purpose:* To sign the transaction message securely offline.
+### `broadcast`
+Broadcasts a signed transaction to the network.
+* `--unsigned <path>`: (Alias: `-u`) Path to the original `unsigned-tx.json` file. (Default: `unsigned-tx.json`)
+* `--signature <path>`: (Alias: `-s`) Path to the `signature.json` file. (Default: `signature.json`)
 
-Inputs: Requires the unsigned-tx.json file and payer's keypair file (e.g., cold-wallet.json).
+---
 
-*How it Works:*
+---
 
-- Loads the Governance Keypair from its file.
-
-- Loads the base64 message string from unsigned-tx.json.
-
-- Decodes the base64 string back into the message buffer.
-
-- Uses nacl.sign.detached (from tweetnacl) to sign the message buffer with the Governance Key's secret key.
-
-- Encodes the resulting signature bytes as a base64 string.
-
-*Output:* Saves the base64 signature and the Governance Key's public key (for verification) into a signature.json file.
-
-*File Transfer (Manual):*
-
-The signature.json file is securely transferred back to the online machine.
-
-<<<<<<< HEAD
-- ***broadcast.ts (Online Machine):***
-=======
-***broadcast.ts (Online Machine):***
->>>>>>> fe65961 (added token_transfer transaction)
-
-*Purpose:* To combine the message and signature and send the transaction to the network.
-
-*Inputs:* Requires both unsigned-tx.json and signature.json.
-
-*How it Works:*
-
-- Loads the base64 message from unsigned-tx.json and decodes it.
-
-- Loads the base64 signature and signer public key from signature.json and decodes the signature.
-
-- Deserializes the message buffer back into a VersionedMessage object.
-
-- Creates a VersionedTransaction from the message.
-
-- Assigns the decoded signature bytes directly to the correct index in the transaction.signatures array.
-
-- Serializes the now-signed VersionedTransaction and send the transaction to the RPC endpoint.
-
-- Waits for confirmation using connection.confirmTransaction.
-
-*Output:* Prints the transaction signature and Explorer link upon successful confirmation, or logs errors if it fails simulation or confirmation.
-
-## Conceptual Workflow (Intended Final Product)
-
-- One-Time Setup (Online): Validator uses the UI's "Setup" tab (not yet built) with their connected hot wallet(this is one time setup only) to run the CreateDelegation instruction, registering their offline Governance Key pubkey on-chain.
-
-- Construct Vote (Online): Validator uses the UI's "Vote" tab (OnlineVoter.tsx). They input vote details. The app looks up their delegation, fetches their nonce, constructs the transaction message, and displays it as a QR code.
-
-- Sign Vote (Offline): They load their Governance Key file, scan the QR from step 2, and the app signs the message, displaying the signature as a new QR code.
-
-Broadcast Vote (Online): Validator uses the UI's "Vote" tab again. They scan the signature QR from step 4. The app verifies the signature matches the expected key, combines it with the transaction message, and broadcasts it.
-
-**Again, DO NOT use this toolkit in its current state for any real voting or with sensitive keys.**
+## ⚠️ Disclaimer
+**This toolkit is experimental and has not been tested on Solana mainnet. Use at your own risk. It is intended for development and testing purposes on devnet only for now, will be released in production once proper audited.**
