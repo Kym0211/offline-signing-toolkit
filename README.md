@@ -15,12 +15,34 @@ It is designed to be run in a secure, air-gapped workflow.
 
 ---
 
+## Security Features
+
+* **True Cold Storage:** Your private key *never* leaves the offline machine.
+* **Versioned Transactions:** Fully compatible with modern Solana standards (Address Lookup Tables, etc.).
+* **Visual Verification:** The offline signer decodes and displays the transaction details (Amount, Recipient, Network) before asking for confirmation.
+* **Hot/Cold Separation:** The `create-nonce` command separates the **Payer** (Hot Wallet) from the **Authority** (Cold Wallet), so you don't even need your private key to set up the account.
+* **Human-Readable Inputs:** Handles decimal calculations automatically to prevent "Raw Unit" errors.
+
+---
+
 ## Installation
 
-1.  Go to the [**Releases Page**](https://github.com/Kym0211/offline-signing-toolkit/releases) on this GitHub repository.
-2.  Download the executable for your operating system (e.g., `offline-signer-cli-win.exe`, `offline-signer-cli-macos`).
-3.  Copy this single executable file to both your online and offline machines (e.g., via a trusted USB drive).
+### Option 1: Download Binary
+Download the latest executable for your OS from the [Releases Page](#) (Linux, macOS, Windows).
+*No Node.js or dependencies required.*
 
+### Option 2: Build from Source
+```bash
+# 1. Clone
+gh repo clone Kym0211/offline-signing-cli
+cd offline-signer-toolkit
+
+# 2. Install
+pnpm install
+
+# 3. Build (Generates binaries in dist/executables/)
+pnpm build
+```
 ---
 
 ## The Workflow
@@ -29,41 +51,50 @@ This tool is designed to be run in a 3-step process that moves between your inte
 
 
 
-### Step 1: One-Time Setup (Online)
+### One-Time Setup (Online)
 
 Before you can use the tool, you need a Durable Nonce account.
 
-1.  **Prepare Your Cold Key:** Use an existing, funded cold key or create a new one (e.g., as a `.json` file) and fund it with a small amount of SOL. This key will be the *authority* for the nonce.
-2.  **Create Nonce Account:** On your **online** machine, run the `create-nonce` command. This will create the new nonce account on-chain and save its keypair to a new file.
+* **Payer:** A hot wallet on your online machine.
+* **Authority:** The Public Key of your Cold Wallet.
 
-    ```bash
-    ./offline-signer-cli create-nonce --authority <path/to/your-cold-key.json>
+  ```bash
+  ./offline-signer-cli create-nonce \
+    --env _ \
+    --payer <path/to/hot-wallet.json> \
+    --authority <COLD_WALLET_PUBKEY>
     ```
-    *This is the only time your cold key needs to be used online to send a transaction.*
+* **Result:** A `nonce-account.json` file is saved. Keep the address safe.
 
-### Step 2: Per-Transaction Workflow
+### Step 1: Construct (Online)
 
-This is the process you will repeat for every transaction.
-
-#### A. Construct (Online)
 On your **online** machine, run the `sol-transfer` or `token-transfer` command to build your transaction. This creates the `unsigned-tx.json` file.
 
-*Example (SOL Transfer):*
+*For SOL Transfer:*
 ```bash
 ./offline-signer-cli sol-transfer \
-  --sender <SENDER_PUBKEY> \
+  --env _ \
+  --sender <COLD_WALLET_PUBKEY> \
   --recipient <RECIPIENT_PUBKEY> \
-  --amount 0.5 \
-  --nonce <YOUR_NONCE_ACCOUNT_PUBKEY>
+  --amount _ \
+  --nonce <NONCE_ACCOUNT_PUBKEY>
 ```
-*Output: `unsigned-tx.json` is created.*
 
-#### B. Transfer (Manual)
-Copy the following files to your air-gapped machine via USB:
-1.  `unsigned-tx.json`
-2.  Your `cold-wallet.json` (the key you used as the nonce authority)
+*For Token Transfer:*
+```bash
+./offline-signer-cli token-transfer \
+  --env _ \
+  --sender <COLD_WALLET_PUBKEY> \
+  --recipient <RECIPIENT_PUBKEY> \
+  --mint <TOKEN_MINT_ADDRESS> \
+  --amount _ \
+  --nonce <NONCE_ACCOUNT_PUBKEY>
+```
 
-#### C. Sign (Offline)
+* **Result:** `unsigned-tx.json` is created.
+* **Note:** Copy `unsigned-tx.json` & `cold-wallet.json` files to your air-gapped machine via USB.
+
+### Step 2: Sign (Offline)
 On your **air-gapped** machine, run the `sign` command. It will read your keypair and the unsigned transaction, and create a new file with the signature.
 
 ```bash
@@ -71,28 +102,32 @@ On your **air-gapped** machine, run the `sign` command. It will read your keypai
   --keypair <path/to/cold-wallet.json> \
   --unsigned <path/to/unsigned-tx.json>
 ```
-*Output: `signature.json` is created.*
 
-#### D. Transfer (Manual)
-Copy the `signature.json` file back to your **online** machine via USB.
+* **Result:** `signature.json` is created.
+* **Note:** Copy `signature.json` file back to your online machine.
 
-#### E. Broadcast (Online)
+### Step 3: Broadcast (Online)
 On your **online** machine, run the `broadcast` command. It will read the original message and the new signature, combine them, and send the transaction.
 
 ```bash
 ./offline-signer-cli broadcast \
+  --env devnet \
   --unsigned <path/to/unsigned-tx.json> \
   --signature <path/to/signature.json>
 ```
-*Output: Prints the final Transaction Signature and Explorer link.*
+* **Result:** Prints the final Transaction Signature and Explorer link.
 
 ---
 
 ## Command Reference
 
+### Global Flags
+* `--env`: (Alias: `-e`) Target network (devnet or mainnet). (Default: *devnet*)
+
 ### `create-nonce`
 Creates a new Durable Nonce account.
-* `--authority <path>`: (Alias: `-a`) Path to the keypair file that will own the nonce. (Default: `cold-wallet.json`)
+* `--payer <path>`: (Alias: `-p`) Path to the Hot Wallet keypair (pays the rent).
+* `--authority <path>`: (Alias: `-a`) **Public Key** of the Cold Wallet (will control the nonce).
 
 ### `sol-transfer`
 Constructs an unsigned SOL transfer.
@@ -108,21 +143,29 @@ Constructs an unsigned SPL Token transfer.
 * `--mint <pubkey>`: (Alias: `-m`) The mint address of the token.
 * `--amount <number>`: (Alias: `-a`) Amount of tokens (raw units).
 * `--nonce <pubkey>`: (Alias: `-n`) Your nonce account public key.
-* `--fee-payer <pubkey>`: (Alias: `-f`) Optional. The key to pay fees. (Default: *sender*)
+* `--fee-payer <pubkey>`: (Alias: `-f`) **Optional.** The key to pay fees. (Default: *sender*)
 
 ### `sign`
 Signs an unsigned transaction message on an offline machine.
-* `--unsigned <path>`: (Alias: `-u`) Path to the `unsigned-tx.json` file. (Default: `unsigned-tx.json`)
-* `--keypair <path>`: (Alias: `-k`) Path to your cold wallet keypair. (Default: `cold-wallet.json`)
+* `--unsigned <path>`: (Alias: `-u`) Path to the `unsigned-tx.json` file.
+* `--keypair <path>`: (Alias: `-k`) Path to your cold wallet keypair(JSON).
 
 ### `broadcast`
 Broadcasts a signed transaction to the network.
-* `--unsigned <path>`: (Alias: `-u`) Path to the original `unsigned-tx.json` file. (Default: `unsigned-tx.json`)
-* `--signature <path>`: (Alias: `-s`) Path to the `signature.json` file. (Default: `signature.json`)
+* `--unsigned <path>`: (Alias: `-u`) Path to the original `unsigned-tx.json` file. 
+* `--signature <path>`: (Alias: `-s`) Path to the `signature.json` file.
 
 ---
 
----
+## Development
+To build the project locally:
+  ```bash
+  # Install dependencies
+  pnpm install
 
-## ⚠️ Disclaimer
-**This toolkit is experimental and has not been tested on Solana mainnet. Use at your own risk. It is intended for development and testing purposes on devnet only for now, will be released in production once proper audited.**
+  # Run in dev mode 
+  pnpm dev token-transfer --env devnet ...
+
+  # Build binaries
+  pnpm build
+  ```
