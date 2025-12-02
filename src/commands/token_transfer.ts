@@ -15,6 +15,7 @@ import {
     Mint
 } from '@solana/spl-token';
 import { getConnection } from "../utils/connection";
+import { getTokenSymbol } from "../utils/tokenSymbol"
 import { saveJson, UnsignedTxJson } from "../utils/io";
 
 export async function constructTokenTransfer(
@@ -41,6 +42,7 @@ export async function constructTokenTransfer(
     const mintInfo: Mint = await getMint(connection, mint);
     const decimals: number = mintInfo.decimals;
     const amountRaw = BigInt(Math.round(amount * Math.pow(10, decimals)));
+    const symbol = await getTokenSymbol(connection, mint);
 
     // 2. Fetch Nonce
     const nonceAccountInfo = await connection.getAccountInfo(noncePubkey);
@@ -100,7 +102,7 @@ export async function constructTokenTransfer(
         network: env,
         messageBase64: Buffer.from(messageV0.serialize()).toString("base64"),
         meta: {
-            tokenSymbol: "TOKEN",
+            tokenSymbol: symbol,
             decimals: decimals,
             amount
         }

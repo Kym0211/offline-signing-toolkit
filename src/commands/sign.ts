@@ -32,7 +32,7 @@ export async function signOffline(keypairPath: string, unsignedPath: string) {
     
     if (txData.meta) {
         console.log(`  Action:   TRANSFER`);
-        console.log(`  Amount:   ${txData.meta.amount}`);
+        console.log(`  Amount:   ${txData.meta.amount} ${txData.meta.tokenSymbol}`);
     } else {
         console.log(` Description:  ${txData.description}`);
     }
