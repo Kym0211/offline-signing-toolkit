@@ -28,7 +28,7 @@ It is designed to be run in a secure, air-gapped workflow.
 ## Installation
 
 ### Option 1: Download Binary
-Download the latest executable for your OS from the [Releases Page](#) (Linux, macOS, Windows).
+Download the latest executable for your OS from the [Releases Page](https://github.com/Kym0211/offline-signing-cli/releases) (Linux, macOS, Windows).
 *No Node.js or dependencies required.*
 
 ### Option 2: Build from Source
