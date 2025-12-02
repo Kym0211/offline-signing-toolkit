@@ -10,8 +10,7 @@ export async function createNonce(
 ) {
   const connection = getConnection(env);
   
-  // 1. Load the Hot Wallet (Payer)
-  // This wallet must be ONLINE and funded (approx 0.002 SOL is enough)
+  // 1. Load the Hot Wallet
   if (!fs.existsSync(payerKeypairPath)) {
       throw new Error(`Payer (Hot Wallet) file not found at: ${payerKeypairPath}`);
   }
@@ -19,7 +18,7 @@ export async function createNonce(
   const payer = Keypair.fromSecretKey(payerSecret);
 
   const authority = new PublicKey(authorityPubkeyStr);
-  const nonceKeypair = Keypair.generate(); // We create a brand new account for the nonce
+  const nonceKeypair = Keypair.generate();
 
   console.log(`\nInitializing Durable Nonce on ${env.toUpperCase()}`);
   console.log(`   Payer (Hot):     ${payer.publicKey.toBase58()}`);
@@ -45,7 +44,7 @@ export async function createNonce(
     })
   );
 
-  // 4. Sign and Send (Only Payer signs here!)
+  // 4. Sign and Send
   try {
       const txId = await connection.sendTransaction(tx, [payer, nonceKeypair]);
       console.log(`\nNonce Account Created!`);
