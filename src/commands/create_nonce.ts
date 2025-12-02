@@ -15,10 +15,10 @@ export async function createNonce(
       throw new Error(`Payer (Hot Wallet) file not found at: ${payerKeypairPath}`);
   }
   const payerSecret = new Uint8Array(JSON.parse(fs.readFileSync(payerKeypairPath, 'utf-8')));
-  const payer = Keypair.fromSecretKey(payerSecret);
+  const payer: Keypair = Keypair.fromSecretKey(payerSecret);
 
-  const authority = new PublicKey(authorityPubkeyStr);
-  const nonceKeypair = Keypair.generate();
+  const authority: PublicKey = new PublicKey(authorityPubkeyStr);
+  const nonceKeypair: Keypair = Keypair.generate();
 
   console.log(`\nInitializing Durable Nonce on ${env.toUpperCase()}`);
   console.log(`   Payer (Hot):     ${payer.publicKey.toBase58()}`);
@@ -26,7 +26,7 @@ export async function createNonce(
   console.log(`   New Nonce Acct:  ${nonceKeypair.publicKey.toBase58()}`);
 
   // 2. Calculate Rent
-  const minRent = await connection.getMinimumBalanceForRentExemption(NONCE_ACCOUNT_LENGTH);
+  const minRent: number = await connection.getMinimumBalanceForRentExemption(NONCE_ACCOUNT_LENGTH);
   
   // 3. Build Transaction
   const tx = new Transaction();

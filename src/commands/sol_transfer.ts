@@ -1,4 +1,4 @@
-import { PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL, NonceAccount, TransactionInstruction, TransactionMessage } from "@solana/web3.js";
+import { PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL, NonceAccount, TransactionInstruction, TransactionMessage, Connection, MessageV0 } from "@solana/web3.js";
 import { getConnection } from "../utils/connection";
 import { saveJson, UnsignedTxJson } from "../utils/io";
 
@@ -9,10 +9,10 @@ export async function constructSolTransfer(
   nonceStr: string,
   amount: number
 ) {
-  const connection = getConnection(env);
-  const sender = new PublicKey(senderStr);
-  const recipient = new PublicKey(recipientStr);
-  const noncePubkey = new PublicKey(nonceStr);
+  const connection: Connection = getConnection(env);
+  const sender: PublicKey = new PublicKey(senderStr);
+  const recipient: PublicKey = new PublicKey(recipientStr);
+  const noncePubkey: PublicKey = new PublicKey(nonceStr);
 
   console.log(`\nConstructing SOL Transfer on ${env.toUpperCase()}`);
   console.log(`  From:   ${sender.toBase58()}`);
@@ -27,7 +27,7 @@ export async function constructSolTransfer(
       throw new Error(`Nonce account ${nonceStr} not found. Did you run create-nonce?`);
   }
   
-  const nonceAccount = NonceAccount.fromAccountData(nonceInfo.data);
+  const nonceAccount: NonceAccount = NonceAccount.fromAccountData(nonceInfo.data);
 
   // 2. Build Tx
   const ix: TransactionInstruction[] = [];
@@ -47,7 +47,7 @@ export async function constructSolTransfer(
   )
 
   // 3. Compile V0 Message
-  const messageV0 = new TransactionMessage({
+  const messageV0: MessageV0 = new TransactionMessage({
     payerKey: sender,
     recentBlockhash: nonceAccount.nonce,
     instructions: ix 
